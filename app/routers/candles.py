@@ -5,25 +5,28 @@ router = APIRouter(prefix="/candles", tags=["Candles"])
 
 @router.get("/{symbol}/{timeframe}")
 def get_candles(symbol: str, timeframe: str, limit: int = 500):
-    valid = ["5m", "15m", "1h", "4h", "1d"]
+    valid = ["1m", "5m", "15m", "1h", "4h", "1d"]
     if timeframe not in valid:
         raise HTTPException(status_code=400, detail="Invalid timeframe")
 
-    # Query single unified table
-    table = "historical_prices"
+    table_map = {
+        "1m": "minute_ohlc",
+        "5m": "ohlc_5m",
+        "15m": "ohlc_15m",
+        "1h": "ohlc_1h",
+        "4h": "ohlc_4h",
+        "1d": "ohlc_1d"
+    }
+
+    table = table_map[timeframe]
 
     res = (
         supabase.table(table)
         .select("*")
         .eq("symbol", symbol.upper())
-        .eq("timeframe", timeframe)
-        .order("ts", desc=True)
+        .order("ts_bucket", desc=True)
         .limit(limit)
         .execute()
     )
-
-    if not res.data:
-        raise HTTPException(status_code=404, detail="No data found")
-
-    # Return oldest → newest
-    return res.data[::-1]
+    
+    return res.data[::-1]  # Optional → earliest first
