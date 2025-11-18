@@ -20,7 +20,7 @@ def get_candles(symbol: str, timeframe: str, limit: int = 500):
     table = table_map[timeframe]
 
     res = (
-        supabase.table(table)
+        supabase.table("minute_ohlc_live")
         .select("*")
         .eq("symbol", symbol.upper())
         .order("ts_bucket", desc=True)
